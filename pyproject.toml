@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hinemos-mcp-claude"
+version = "0.1.0"
+description = "Hinemos MCP Client with REST API support"
+authors = [
+    {name = "User", email = "user@example.com"},
+]
+dependencies = [
+    "httpx>=0.25.0",
+    "pydantic>=2.0.0",
+    "mcp>=1.0.0",
+]
+requires-python = ">=3.9"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]

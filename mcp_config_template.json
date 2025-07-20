@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "hinemos": {
+      "command": "python3",
+      "args": ["hinemos_mcp_server.py"],
+      "env": {
+        "HINEMOS_BASE_URL": "http://your-hinemos-server:8080/HinemosWeb/api",
+        "HINEMOS_USERNAME": "your-username",
+        "HINEMOS_PASSWORD": "your-password",
+        "HINEMOS_VERIFY_SSL": "false"
+      }
+    }
+  }
+}
