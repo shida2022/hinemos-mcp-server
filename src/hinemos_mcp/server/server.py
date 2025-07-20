@@ -328,6 +328,76 @@ class HinemosMCPServer:
                             },
                             "required": ["monitor_type", "monitor_id", "facility_id"]
                         }
+                    ),
+                    # Scope management tools
+                    Tool(
+                        name="hinemos_create_scope",
+                        description="Create a new scope in Hinemos repository",
+                        inputSchema={
+                            "type": "object",
+                            "properties": {
+                                "facility_id": {
+                                    "type": "string",
+                                    "description": "Unique facility ID for the new scope"
+                                },
+                                "facility_name": {
+                                    "type": "string",
+                                    "description": "Display name for the scope"
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "description": "Description of the scope"
+                                },
+                                "owner_role_id": {
+                                    "type": "string",
+                                    "description": "Owner role ID",
+                                    "default": "ADMINISTRATORS"
+                                },
+                                "icon_image": {
+                                    "type": "string",
+                                    "description": "Icon image for the scope"
+                                }
+                            },
+                            "required": ["facility_id", "facility_name"]
+                        }
+                    ),
+                    Tool(
+                        name="hinemos_assign_nodes_to_scope",
+                        description="Assign nodes to a scope",
+                        inputSchema={
+                            "type": "object",
+                            "properties": {
+                                "scope_id": {
+                                    "type": "string",
+                                    "description": "Facility ID of the scope"
+                                },
+                                "node_ids": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "description": "List of node facility IDs to assign to the scope"
+                                }
+                            },
+                            "required": ["scope_id", "node_ids"]
+                        }
+                    ),
+                    Tool(
+                        name="hinemos_remove_nodes_from_scope",
+                        description="Remove nodes from a scope",
+                        inputSchema={
+                            "type": "object",
+                            "properties": {
+                                "scope_id": {
+                                    "type": "string",
+                                    "description": "Facility ID of the scope"
+                                },
+                                "node_ids": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "description": "List of node facility IDs to remove from the scope"
+                                }
+                            },
+                            "required": ["scope_id", "node_ids"]
+                        }
                     )
                 ]
         
@@ -508,6 +578,73 @@ class HinemosMCPServer:
                             "monitor_id": monitor.monitor_id,
                             "monitor_type": monitor_type,
                             "description": monitor.description
+                        }
+                        
+                        return [
+                            TextContent(
+                                type="text",
+                                text=json.dumps(result, indent=2, ensure_ascii=False)
+                            )
+                        ]
+                    
+                    elif name == "hinemos_create_scope":
+                        repo_api = RepositoryAPI(client)
+                        
+                        scope = repo_api.create_scope(
+                            facility_id=arguments["facility_id"],
+                            facility_name=arguments["facility_name"],
+                            description=arguments.get("description", ""),
+                            owner_role_id=arguments.get("owner_role_id", "ADMINISTRATORS"),
+                            icon_image=arguments.get("icon_image")
+                        )
+                        
+                        result = {
+                            "status": "created",
+                            "facility_id": scope.facility_id,
+                            "facility_name": scope.facility_name,
+                            "description": scope.description
+                        }
+                        
+                        return [
+                            TextContent(
+                                type="text",
+                                text=json.dumps(result, indent=2, ensure_ascii=False)
+                            )
+                        ]
+                    
+                    elif name == "hinemos_assign_nodes_to_scope":
+                        repo_api = RepositoryAPI(client)
+                        scope_id = arguments["scope_id"]
+                        node_ids = arguments["node_ids"]
+                        
+                        repo_api.assign_nodes_to_scope(scope_id, node_ids)
+                        
+                        result = {
+                            "status": "success",
+                            "scope_id": scope_id,
+                            "assigned_nodes": node_ids,
+                            "message": f"Successfully assigned {len(node_ids)} nodes to scope {scope_id}"
+                        }
+                        
+                        return [
+                            TextContent(
+                                type="text",
+                                text=json.dumps(result, indent=2, ensure_ascii=False)
+                            )
+                        ]
+                    
+                    elif name == "hinemos_remove_nodes_from_scope":
+                        repo_api = RepositoryAPI(client)
+                        scope_id = arguments["scope_id"]
+                        node_ids = arguments["node_ids"]
+                        
+                        repo_api.remove_nodes_from_scope(scope_id, node_ids)
+                        
+                        result = {
+                            "status": "success",
+                            "scope_id": scope_id,
+                            "removed_nodes": node_ids,
+                            "message": f"Successfully removed {len(node_ids)} nodes from scope {scope_id}"
                         }
                         
                         return [
