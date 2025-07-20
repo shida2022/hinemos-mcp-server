@@ -314,24 +314,28 @@ class RepositoryAPI:
     
     # Facility tree operations
     
-    def get_facility_tree(self, root_facility_id: Optional[str] = None) -> FacilityInfo:
+    def get_facility_tree(self, root_facility_id: Optional[str] = None, owner_role_id: str = "ALL_USERS") -> dict:
         """Get facility tree structure.
         
         Args:
             root_facility_id: Root facility ID to start from (None for full tree)
+            owner_role_id: Owner role ID for access control
             
         Returns:
-            Root facility information with tree structure
+            Complete facility tree structure as dict
         """
-        return self.client.get_facility_tree(root_facility_id)
+        return self.client.get_facility_tree(root_facility_id, owner_role_id)
     
-    def get_node_tree(self) -> FacilityInfo:
+    def get_node_tree(self, owner_role_id: str = "ALL_USERS") -> dict:
         """Get node tree (nodes only).
         
+        Args:
+            owner_role_id: Owner role ID for access control
+            
         Returns:
-            Root facility information with node tree structure
+            Node tree structure as dict
         """
-        return self.client.get_node_tree()
+        return self.client.get_node_tree(owner_role_id)
     
     def get_all_facilities(self) -> List[FacilityInfo]:
         """Get all facility information.

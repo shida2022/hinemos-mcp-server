@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from mcp.server import Server
 from mcp.types import (
     Resource, Tool, TextContent, ImageContent, EmbeddedResource,
-    CallToolResult, ListResourcesResult, ListToolsResult, ReadResourceResult
+    ReadResourceResult
 )
 import mcp.server.stdio
 
@@ -40,30 +40,28 @@ class HinemosMCPServer:
         """Setup MCP server handlers."""
         
         @self.server.list_resources()
-        async def list_resources() -> ListResourcesResult:
+        async def list_resources() -> list[Resource]:
             """List available Hinemos resources."""
-            return ListResourcesResult(
-                resources=[
-                    Resource(
-                        uri="hinemos://repository/nodes",
-                        name="Hinemos Repository Nodes",
-                        description="List of all nodes in Hinemos repository",
-                        mimeType="application/json"
-                    ),
-                    Resource(
-                        uri="hinemos://repository/scopes",
-                        name="Hinemos Repository Scopes",
-                        description="List of all scopes in Hinemos repository",
-                        mimeType="application/json"
-                    ),
-                    Resource(
-                        uri="hinemos://monitor/settings",
-                        name="Hinemos Monitor Settings",
-                        description="List of all monitor configurations",
-                        mimeType="application/json"
-                    )
-                ]
-            )
+            return [
+                Resource(
+                    uri="hinemos://repository/nodes",
+                    name="Hinemos Repository Nodes",
+                    description="List of all nodes in Hinemos repository",
+                    mimeType="application/json"
+                ),
+                Resource(
+                    uri="hinemos://repository/scopes",
+                    name="Hinemos Repository Scopes",
+                    description="List of all scopes in Hinemos repository",
+                    mimeType="application/json"
+                ),
+                Resource(
+                    uri="hinemos://monitor/settings",
+                    name="Hinemos Monitor Settings",
+                    description="List of all monitor configurations",
+                    mimeType="application/json"
+                )
+            ]
         
         @self.server.read_resource()
         async def read_resource(uri: str) -> ReadResourceResult:
@@ -152,10 +150,9 @@ class HinemosMCPServer:
                 )
         
         @self.server.list_tools()
-        async def list_tools() -> ListToolsResult:
+        async def list_tools() -> list[Tool]:
             """List available Hinemos tools."""
-            return ListToolsResult(
-                tools=[
+            return [
                     # Repository management tools
                     Tool(
                         name="hinemos_get_repository_node",
@@ -333,10 +330,9 @@ class HinemosMCPServer:
                         }
                     )
                 ]
-            )
         
         @self.server.call_tool()
-        async def call_tool(name: str, arguments: Dict[str, Any]) -> CallToolResult:
+        async def call_tool(name: str, arguments: Dict[str, Any]):
             """Handle tool calls."""
             try:
                 with HinemosClient(**self.config) as client:
@@ -354,14 +350,12 @@ class HinemosMCPServer:
                             "sub_platform_family": getattr(node, "sub_platform_family", None)
                         }
                         
-                        return CallToolResult(
-                            content=[
-                                TextContent(
-                                    type="text",
-                                    text=json.dumps(result, indent=2, ensure_ascii=False)
-                                )
-                            ]
-                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=json.dumps(result, indent=2, ensure_ascii=False)
+                            )
+                        ]
                     
                     elif name == "hinemos_create_repository_node":
                         repo_api = RepositoryAPI(client)
@@ -381,14 +375,12 @@ class HinemosMCPServer:
                             "facility_name": node.facility_name
                         }
                         
-                        return CallToolResult(
-                            content=[
-                                TextContent(
-                                    type="text",
-                                    text=json.dumps(result, indent=2, ensure_ascii=False)
-                                )
-                            ]
-                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=json.dumps(result, indent=2, ensure_ascii=False)
+                            )
+                        ]
                     
                     elif name == "hinemos_update_repository_node":
                         repo_api = RepositoryAPI(client)
@@ -406,14 +398,12 @@ class HinemosMCPServer:
                             "facility_name": node.facility_name
                         }
                         
-                        return CallToolResult(
-                            content=[
-                                TextContent(
-                                    type="text",
-                                    text=json.dumps(result, indent=2, ensure_ascii=False)
-                                )
-                            ]
-                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=json.dumps(result, indent=2, ensure_ascii=False)
+                            )
+                        ]
                     
                     elif name == "hinemos_get_monitor":
                         monitor_api = MonitorAPI(client)
@@ -431,14 +421,12 @@ class HinemosMCPServer:
                             "run_interval": getattr(monitor, "run_interval", None)
                         }
                         
-                        return CallToolResult(
-                            content=[
-                                TextContent(
-                                    type="text",
-                                    text=json.dumps(result, indent=2, ensure_ascii=False)
-                                )
-                            ]
-                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=json.dumps(result, indent=2, ensure_ascii=False)
+                            )
+                        ]
                     
                     elif name == "hinemos_create_monitor":
                         monitor_api = MonitorAPI(client)
@@ -522,28 +510,23 @@ class HinemosMCPServer:
                             "description": monitor.description
                         }
                         
-                        return CallToolResult(
-                            content=[
-                                TextContent(
-                                    type="text",
-                                    text=json.dumps(result, indent=2, ensure_ascii=False)
-                                )
-                            ]
-                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=json.dumps(result, indent=2, ensure_ascii=False)
+                            )
+                        ]
                     
                     else:
                         raise ValueError(f"Unknown tool: {name}")
             
             except Exception as e:
-                return CallToolResult(
-                    content=[
-                        TextContent(
-                            type="text",
-                            text=f"Error executing {name}: {str(e)}"
-                        )
-                    ],
-                    isError=True
-                )
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"Error executing {name}: {str(e)}"
+                    )
+                ]
     
     async def run(self):
         """Run the MCP server."""
