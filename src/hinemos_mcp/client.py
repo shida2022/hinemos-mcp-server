@@ -196,32 +196,39 @@ class HinemosClient:
     
     # Repository API methods
     
-    def get_facility_tree(self, target_facility_id: Optional[str] = None) -> FacilityInfo:
+    def get_facility_tree(self, target_facility_id: Optional[str] = None, owner_role_id: str = "ALL_USERS") -> dict:
         """Get facility tree.
         
         Args:
-            target_facility_id: Target facility ID to get tree from
+            target_facility_id: Target facility ID to get tree from (None for full tree)
+            owner_role_id: Owner role ID for access control
             
         Returns:
-            Root facility information with tree structure
+            Facility tree structure as dict
         """
-        endpoint = "/repository/facility_tree"
         if target_facility_id:
             endpoint = f"/repository/facility_tree/{target_facility_id}"
+            params = {"ownerRoleId": owner_role_id}
+        else:
+            endpoint = "/repository/facility_tree"
+            params = {"ownerRoleId": owner_role_id}
         
-        response_data = self._make_request("GET", endpoint)
-        tree_response = FacilityTreeResponse(**response_data)
-        return tree_response.data
+        response_data = self._make_request("GET", endpoint, params=params)
+        return response_data
     
-    def get_node_tree(self) -> FacilityInfo:
+    def get_node_tree(self, owner_role_id: str = "ALL_USERS") -> dict:
         """Get node tree (nodes only).
         
+        Args:
+            owner_role_id: Owner role ID for access control
+            
         Returns:
-            Root facility information with node tree structure
+            Node tree structure as dict
         """
-        response_data = self._make_request("GET", "/repository/facility_nodeTree")
-        tree_response = FacilityTreeResponse(**response_data)
-        return tree_response.data
+        endpoint = "/repository/facility_nodeTree"
+        params = {"ownerRoleId": owner_role_id}
+        response_data = self._make_request("GET", endpoint, params=params)
+        return response_data
     
     def get_node(self, facility_id: str, full: bool = False) -> NodeInfo:
         """Get node information.
