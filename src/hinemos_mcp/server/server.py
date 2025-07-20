@@ -344,6 +344,10 @@ class HinemosMCPServer:
                                     "type": "string",
                                     "description": "Display name for the scope"
                                 },
+                                "parent_facility_id": {
+                                    "type": "string",
+                                    "description": "Parent facility ID (scope will be created under this parent)"
+                                },
                                 "description": {
                                     "type": "string",
                                     "description": "Description of the scope"
@@ -351,7 +355,7 @@ class HinemosMCPServer:
                                 "owner_role_id": {
                                     "type": "string",
                                     "description": "Owner role ID",
-                                    "default": "ADMINISTRATORS"
+                                    "default": "ALL_USERS"
                                 },
                                 "icon_image": {
                                     "type": "string",
@@ -593,8 +597,9 @@ class HinemosMCPServer:
                         scope = repo_api.create_scope(
                             facility_id=arguments["facility_id"],
                             facility_name=arguments["facility_name"],
+                            parent_facility_id=arguments.get("parent_facility_id") or "",
                             description=arguments.get("description", ""),
-                            owner_role_id=arguments.get("owner_role_id", "ADMINISTRATORS"),
+                            owner_role_id=arguments.get("owner_role_id", "ALL_USERS"),
                             icon_image=arguments.get("icon_image")
                         )
                         
@@ -602,7 +607,8 @@ class HinemosMCPServer:
                             "status": "created",
                             "facility_id": scope.facility_id,
                             "facility_name": scope.facility_name,
-                            "description": scope.description
+                            "description": scope.description,
+                            "parent_facility_id": arguments.get("parent_facility_id")
                         }
                         
                         return [

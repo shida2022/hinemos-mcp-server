@@ -213,7 +213,8 @@ class RepositoryAPI:
         self,
         facility_id: str,
         facility_name: str,
-        owner_role_id: str = "ADMINISTRATORS",
+        parent_facility_id: Optional[str] = None,
+        owner_role_id: str = "ALL_USERS",
         description: Optional[str] = None,
         icon_image: Optional[str] = None,
     ) -> ScopeInfo:
@@ -222,6 +223,7 @@ class RepositoryAPI:
         Args:
             facility_id: Unique facility ID for the scope
             facility_name: Display name for the scope
+            parent_facility_id: Parent facility ID (scope will be created under this parent)
             owner_role_id: Owner role ID (default: ADMINISTRATORS)
             description: Optional description
             icon_image: Optional icon image
@@ -238,6 +240,7 @@ class RepositoryAPI:
         )
         
         scope_request = AddScopeRequest(
+            parent_facility_id=parent_facility_id or "",
             scope_info=scope_info
         )
         
