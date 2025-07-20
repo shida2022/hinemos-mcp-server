@@ -269,8 +269,9 @@ class HinemosFastMCPServer:
         def hinemos_create_scope(
             facility_id: str,
             facility_name: str,
+            parent_facility_id: Optional[str] = None,
             description: str = "",
-            owner_role_id: str = "ADMINISTRATORS",
+            owner_role_id: str = "ALL_USERS",
             icon_image: Optional[str] = None
         ) -> str:
             """Create a new scope in Hinemos repository.
@@ -278,6 +279,7 @@ class HinemosFastMCPServer:
             Args:
                 facility_id: Unique facility ID for the new scope
                 facility_name: Display name for the scope
+                parent_facility_id: Parent facility ID (scope will be created under this parent)
                 description: Description of the scope
                 owner_role_id: Owner role ID (default: ADMINISTRATORS)
                 icon_image: Icon image for the scope
@@ -292,6 +294,7 @@ class HinemosFastMCPServer:
                     scope = repo_api.create_scope(
                         facility_id=facility_id,
                         facility_name=facility_name,
+                        parent_facility_id=parent_facility_id or "",
                         description=description,
                         owner_role_id=owner_role_id,
                         icon_image=icon_image
@@ -301,7 +304,8 @@ class HinemosFastMCPServer:
                         "status": "created",
                         "facility_id": scope.facility_id,
                         "facility_name": scope.facility_name,
-                        "description": scope.description
+                        "description": scope.description,
+                        "parent_facility_id": parent_facility_id
                     }
                     
                     return json.dumps(result, indent=2, ensure_ascii=False)
