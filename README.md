@@ -2,6 +2,7 @@
 
 Hinemos MCP (Model Context Protocol) Client は、Hinemos REST API を Python から簡単に操作できるクライアントライブラリです。また、Claude AI と統合するための MCP サーバーも提供します。
 
+<<<<<<< HEAD
 Project status: Under working
 
 ## 2025/07/20
@@ -21,6 +22,8 @@ Project status: Under working
 - ログ管理(Not yet)
 ****
 
+=======
+>>>>>>> a55f41c (Initial Commit.)
 ## 🚀 主な機能
 
 ### 🔧 Hinemos REST Client
@@ -237,4 +240,8 @@ Ping監視とHTTP監視を設定してください。
 
 ---
 
+<<<<<<< HEAD
 **注意**: テンプレートファイルを使用して、実際のサーバー情報で設定してからご利用ください。
+=======
+**注意**: テンプレートファイルを使用して、実際のサーバー情報で設定してからご利用ください。
+>>>>>>> a55f41c (Initial Commit.)
