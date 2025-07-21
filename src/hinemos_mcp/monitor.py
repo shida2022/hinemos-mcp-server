@@ -1,6 +1,6 @@
 """Hinemos Monitor API wrapper with simplified interface."""
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 
 from .client import HinemosClient
 from .monitor_models import (
@@ -10,6 +10,12 @@ from .monitor_models import (
     AddHttpStringMonitorRequest,
     AddSnmpNumericMonitorRequest,
     AddLogfileMonitorRequest,
+    AddSqlMonitorRequest,
+    AddJmxMonitorRequest,
+    AddProcessMonitorRequest,
+    AddPortMonitorRequest,
+    AddWinEventMonitorRequest,
+    AddCustomMonitorRequest,
     ConvertFlagEnum,
     GetMonitorListRequest,
     HttpCheckInfoRequest,
@@ -17,11 +23,29 @@ from .monitor_models import (
     HttpStringMonitorResponse,
     LogfileCheckInfoRequest,
     LogfileMonitorResponse,
+    SqlCheckInfoRequest,
+    SqlMonitorResponse,
+    JmxCheckInfoRequest,
+    JmxMonitorResponse,
+    ProcessCheckInfoRequest,
+    ProcessMonitorResponse,
+    PortCheckInfoRequest,
+    PortMonitorResponse,
+    WinEventCheckInfoRequest,
+    WinEventMonitorResponse,
+    CustomCheckInfoRequest,
+    CustomMonitorResponse,
     ModifyPingMonitorRequest,
     ModifyHttpNumericMonitorRequest,
     ModifyHttpStringMonitorRequest,
     ModifySnmpNumericMonitorRequest,
     ModifyLogfileMonitorRequest,
+    ModifySqlMonitorRequest,
+    ModifyJmxMonitorRequest,
+    ModifyProcessMonitorRequest,
+    ModifyPortMonitorRequest,
+    ModifyWinEventMonitorRequest,
+    ModifyCustomMonitorRequest,
     MonitorNumericTypeEnum,
     MonitorNumericValueInfoRequest,
     MonitorNumericValueInfoResponse,
@@ -582,7 +606,7 @@ class MonitorAPI:
         monitor_id: str,
         facility_id: str,
         url: str,
-        patterns: List[Dict[str, Any]],
+        patterns: List[Union[str, Dict[str, Any]]],
         description: str = "",
         run_interval: RunIntervalEnum = RunIntervalEnum.MIN_05,
         timeout: int = 10000,
@@ -596,7 +620,7 @@ class MonitorAPI:
             monitor_id: Unique monitor ID
             facility_id: Target facility ID
             url: URL to monitor
-            patterns: List of pattern configurations
+            patterns: List of pattern strings or pattern configuration dicts
             description: Monitor description
             run_interval: Monitoring interval
             timeout: HTTP timeout in milliseconds
@@ -616,16 +640,31 @@ class MonitorAPI:
         # Create string value info for patterns
         string_value_info = []
         for i, pattern in enumerate(patterns):
-            string_value_info.append(MonitorStringValueInfoRequest(
-                order_no=i + 1,
-                priority=PriorityEnum(pattern.get("priority", PriorityEnum.WARNING)),
-                pattern=pattern["pattern"],
-                message=pattern.get("message", ""),
-                description=pattern.get("description", ""),
-                case_sensitivity_flg=pattern.get("case_sensitive", True),
-                process_type=pattern.get("process_type", True),
-                valid_flg=pattern.get("valid", True)
-            ))
+            # Handle both string patterns and dict patterns
+            if isinstance(pattern, str):
+                # Simple string pattern
+                string_value_info.append(MonitorStringValueInfoRequest(
+                    order_no=i + 1,
+                    priority=PriorityEnum.WARNING,
+                    pattern=pattern,
+                    message=f"Pattern '{pattern}' matched",
+                    description=f"String pattern: {pattern}",
+                    case_sensitivity_flg=True,
+                    process_type=True,
+                    valid_flg=True
+                ))
+            else:
+                # Dict pattern with detailed configuration
+                string_value_info.append(MonitorStringValueInfoRequest(
+                    order_no=i + 1,
+                    priority=PriorityEnum(pattern.get("priority", PriorityEnum.WARNING)),
+                    pattern=pattern["pattern"],
+                    message=pattern.get("message", ""),
+                    description=pattern.get("description", ""),
+                    case_sensitivity_flg=pattern.get("case_sensitive", True),
+                    process_type=pattern.get("process_type", True),
+                    valid_flg=pattern.get("valid", True)
+                ))
         
         # Create notification relations
         notify_relation_list = []
@@ -1103,3 +1142,945 @@ class MonitorAPI:
             List of log file monitor information
         """
         return self.client.get_logfile_monitor_list()
+    
+    # SQL Monitoring
+    def create_sql_monitor(
+        self,
+        monitor_id: str,
+        facility_id: str,
+        connection_url: str,
+        user: str,
+        password: str,
+        jdbc_driver: str,
+        sql: str,
+        description: str = None,
+        application: str = "Hinemos",
+        timeout: int = 5000,
+        run_interval: RunIntervalEnum = RunIntervalEnum.MIN_05,
+        owner_role_id: str = "ADMINISTRATORS",
+        warning_threshold: float = 80.0,
+        critical_threshold: float = 90.0,
+        **kwargs
+    ) -> SqlMonitorResponse:
+        """Create a new SQL monitor with simplified parameters.
+        
+        Args:
+            monitor_id: Unique monitor ID
+            facility_id: Target facility ID
+            connection_url: Database connection URL
+            user: Database user
+            password: Database password
+            jdbc_driver: JDBC driver class name
+            sql: SQL query to execute
+            description: Monitor description
+            application: Application name
+            timeout: Query timeout in milliseconds
+            run_interval: Monitor execution interval
+            owner_role_id: Owner role ID
+            warning_threshold: Warning threshold value
+            critical_threshold: Critical threshold value
+            **kwargs: Additional monitor configuration
+            
+        Returns:
+            Created SQL monitor information
+        """
+        sql_check_info = SqlCheckInfoRequest(
+            connection_url=connection_url,
+            user=user,
+            password=password,
+            jdbc_driver=jdbc_driver,
+            query=sql,
+            timeout=timeout
+        )
+        
+        numeric_value_info = [
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.INFO,
+                threshold_lower_limit=-1.0,
+                threshold_upper_limit=1.0,
+                message="SQL result change is normal"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.WARNING,
+                threshold_lower_limit=-2.0,
+                threshold_upper_limit=2.0,
+                message="SQL result change is in warning range"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.CRITICAL,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="SQL result change is critical"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.UNKNOWN,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="SQL result change monitoring failed"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.INFO,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=warning_threshold,
+                message="SQL query result is normal"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.WARNING,
+                threshold_lower_limit=warning_threshold,
+                threshold_upper_limit=critical_threshold,
+                message="SQL query result is in warning range"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.CRITICAL,
+                threshold_lower_limit=critical_threshold,
+                threshold_upper_limit=999999.0,
+                message="SQL query result is in critical range"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.UNKNOWN,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="SQL query execution unknown"
+            ),
+        ]
+        
+        monitor_request = AddSqlMonitorRequest(
+            monitor_id=monitor_id,
+            facility_id=facility_id,
+            description=description or f"SQL monitor for {connection_url}",
+            application=application,
+            run_interval=run_interval,
+            owner_role_id=owner_role_id,
+            item_name="取得値",
+            measure="収集値単位",
+            sql_check_info=sql_check_info,
+            numeric_value_info=numeric_value_info,
+            **kwargs
+        )
+        
+        return self.client.add_sql_monitor(monitor_request)
+    
+    def update_sql_monitor(
+        self,
+        monitor_id: str,
+        **kwargs
+    ) -> SqlMonitorResponse:
+        """Update an existing SQL monitor.
+        
+        Args:
+            monitor_id: Monitor ID to update
+            **kwargs: Fields to update
+            
+        Returns:
+            Updated SQL monitor information
+        """
+        current = self.client.get_sql_monitor_list()
+        current_monitor = next((m for m in current if m.monitor_id == monitor_id), None)
+        
+        if not current_monitor:
+            raise ValueError(f"SQL monitor {monitor_id} not found")
+        
+        update_data = {}
+        for key, value in kwargs.items():
+            if value is not None:
+                update_data[key] = value
+        
+        if "sql_check_info" in kwargs and kwargs["sql_check_info"]:
+            sql_info = kwargs["sql_check_info"]
+            if isinstance(sql_info, dict):
+                update_data["sql_check_info"] = SqlCheckInfoRequest(**sql_info)
+        
+        modify_request = ModifySqlMonitorRequest(**update_data)
+        return self.client.modify_sql_monitor(monitor_id, modify_request)
+    
+    def list_sql_monitors(self) -> List[SqlMonitorResponse]:
+        """List all SQL monitors.
+        
+        Returns:
+            List of SQL monitor information
+        """
+        return self.client.get_sql_monitor_list()
+    
+    # JMX Monitoring
+    def create_jmx_monitor(
+        self,
+        monitor_id: str,
+        facility_id: str,
+        port: int,
+        description: str = None,
+        application: str = "Hinemos",
+        auth_user: str = None,
+        auth_password: str = None,
+        url: str = None,
+        convert_flg: ConvertFlagEnum = ConvertFlagEnum.NONE,
+        run_interval: RunIntervalEnum = RunIntervalEnum.MIN_05,
+        owner_role_id: str = "ADMINISTRATORS",
+        warning_threshold: float = 80.0,
+        critical_threshold: float = 90.0,
+        **kwargs
+    ) -> JmxMonitorResponse:
+        """Create a new JMX monitor with simplified parameters.
+        
+        Args:
+            monitor_id: Unique monitor ID
+            facility_id: Target facility ID
+            port: JMX port number
+            description: Monitor description
+            application: Application name
+            auth_user: JMX authentication user
+            auth_password: JMX authentication password
+            url: JMX URL (optional)
+            convert_flg: Convert flag for delta calculation
+            run_interval: Monitor execution interval
+            owner_role_id: Owner role ID
+            warning_threshold: Warning threshold value
+            critical_threshold: Critical threshold value
+            **kwargs: Additional monitor configuration
+            
+        Returns:
+            Created JMX monitor information
+        """
+        jmx_check_info = JmxCheckInfoRequest(
+            port=port,
+            auth_user=auth_user,
+            auth_password=auth_password,
+            url=url,
+            convert_flg=convert_flg
+        )
+        
+        numeric_value_info = [
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.INFO,
+                threshold_lower_limit=-1.0,
+                threshold_upper_limit=1.0,
+                message="JMX change is normal"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.WARNING,
+                threshold_lower_limit=-2.0,
+                threshold_upper_limit=2.0,
+                message="JMX change is in warning range"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.CRITICAL,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="JMX change is critical"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.UNKNOWN,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="JMX change monitoring failed"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.INFO,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="JMX basic info"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.WARNING,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="JMX basic warning"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.CRITICAL,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="JMX basic critical"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.UNKNOWN,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="JMX basic unknown"
+            ),
+        ]
+        
+        monitor_request = AddJmxMonitorRequest(
+            monitor_id=monitor_id,
+            facility_id=facility_id,
+            description=description or f"JMX monitor for port {port}",
+            application=application,
+            run_interval=run_interval,
+            owner_role_id=owner_role_id,
+            item_name="$[JMX_HEAP_MEMORY_USAGE_COMMITTED]",
+            measure="byte",
+            jmx_check_info=jmx_check_info,
+            numeric_value_info=numeric_value_info,
+            **kwargs
+        )
+        
+        return self.client.add_jmx_monitor(monitor_request)
+    
+    def update_jmx_monitor(
+        self,
+        monitor_id: str,
+        **kwargs
+    ) -> JmxMonitorResponse:
+        """Update an existing JMX monitor.
+        
+        Args:
+            monitor_id: Monitor ID to update
+            **kwargs: Fields to update
+            
+        Returns:
+            Updated JMX monitor information
+        """
+        current = self.client.get_jmx_monitor_list()
+        current_monitor = next((m for m in current if m.monitor_id == monitor_id), None)
+        
+        if not current_monitor:
+            raise ValueError(f"JMX monitor {monitor_id} not found")
+        
+        update_data = {}
+        for key, value in kwargs.items():
+            if value is not None:
+                update_data[key] = value
+        
+        if "jmx_check_info" in kwargs and kwargs["jmx_check_info"]:
+            jmx_info = kwargs["jmx_check_info"]
+            if isinstance(jmx_info, dict):
+                update_data["jmx_check_info"] = JmxCheckInfoRequest(**jmx_info)
+        
+        modify_request = ModifyJmxMonitorRequest(**update_data)
+        return self.client.modify_jmx_monitor(monitor_id, modify_request)
+    
+    def list_jmx_monitors(self) -> List[JmxMonitorResponse]:
+        """List all JMX monitors.
+        
+        Returns:
+            List of JMX monitor information
+        """
+        return self.client.get_jmx_monitor_list()
+    
+    # Process Monitoring
+    def create_process_monitor(
+        self,
+        monitor_id: str,
+        facility_id: str,
+        param: str,
+        description: str = None,
+        application: str = "Hinemos",
+        case_sensitivity_flg: bool = True,
+        run_interval: RunIntervalEnum = RunIntervalEnum.MIN_05,
+        owner_role_id: str = "ADMINISTRATORS",
+        min_count: int = 1,
+        max_count: int = 10,
+        **kwargs
+    ) -> ProcessMonitorResponse:
+        """Create a new process monitor with simplified parameters.
+        
+        Args:
+            monitor_id: Unique monitor ID
+            facility_id: Target facility ID
+            param: Process parameter to monitor
+            description: Monitor description
+            application: Application name
+            case_sensitivity_flg: Case sensitivity flag
+            run_interval: Monitor execution interval
+            owner_role_id: Owner role ID
+            min_count: Minimum expected process count
+            max_count: Maximum expected process count
+            **kwargs: Additional monitor configuration
+            
+        Returns:
+            Created process monitor information
+        """
+        process_check_info = ProcessCheckInfoRequest(
+            param=param,
+            case_sensitivity_flg=case_sensitivity_flg
+        )
+        
+        numeric_value_info = [
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.INFO,
+                threshold_lower_limit=-1.0,
+                threshold_upper_limit=1.0,
+                message="Process change is normal"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.WARNING,
+                threshold_lower_limit=-2.0,
+                threshold_upper_limit=2.0,
+                message="Process change is in warning range"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.CRITICAL,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="Process change is critical"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.UNKNOWN,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="Process change monitoring failed"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.INFO,
+                threshold_lower_limit=float(min_count),
+                threshold_upper_limit=float(max_count),
+                message="Process count is normal"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.WARNING,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="Process basic warning"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.CRITICAL,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="Process basic critical"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.UNKNOWN,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="Process basic unknown"
+            ),
+        ]
+        
+        monitor_request = AddProcessMonitorRequest(
+            monitor_id=monitor_id,
+            facility_id=facility_id,
+            description=description or f"Process monitor for {param}",
+            application=application,
+            run_interval=run_interval,
+            owner_role_id=owner_role_id,
+            item_name="$[PROCESS_COUNT]",
+            measure="count",
+            process_check_info=process_check_info,
+            numeric_value_info=numeric_value_info,
+            **kwargs
+        )
+        
+        return self.client.add_process_monitor(monitor_request)
+    
+    def update_process_monitor(
+        self,
+        monitor_id: str,
+        **kwargs
+    ) -> ProcessMonitorResponse:
+        """Update an existing process monitor.
+        
+        Args:
+            monitor_id: Monitor ID to update
+            **kwargs: Fields to update
+            
+        Returns:
+            Updated process monitor information
+        """
+        current = self.client.get_process_monitor_list()
+        current_monitor = next((m for m in current if m.monitor_id == monitor_id), None)
+        
+        if not current_monitor:
+            raise ValueError(f"Process monitor {monitor_id} not found")
+        
+        update_data = {}
+        for key, value in kwargs.items():
+            if value is not None:
+                update_data[key] = value
+        
+        if "process_check_info" in kwargs and kwargs["process_check_info"]:
+            process_info = kwargs["process_check_info"]
+            if isinstance(process_info, dict):
+                update_data["process_check_info"] = ProcessCheckInfoRequest(**process_info)
+        
+        modify_request = ModifyProcessMonitorRequest(**update_data)
+        return self.client.modify_process_monitor(monitor_id, modify_request)
+    
+    def list_process_monitors(self) -> List[ProcessMonitorResponse]:
+        """List all process monitors.
+        
+        Returns:
+            List of process monitor information
+        """
+        return self.client.get_process_monitor_list()
+    
+    # Port Monitoring
+    def create_port_monitor(
+        self,
+        monitor_id: str,
+        facility_id: str,
+        port_no: int,
+        description: str = None,
+        application: str = "Hinemos",
+        service_id: str = None,
+        timeout: int = 5000,
+        run_interval: RunIntervalEnum = RunIntervalEnum.MIN_05,
+        owner_role_id: str = "ADMINISTRATORS",
+        **kwargs
+    ) -> PortMonitorResponse:
+        """Create a new port monitor with simplified parameters.
+        
+        Args:
+            monitor_id: Unique monitor ID
+            facility_id: Target facility ID
+            port_no: Port number to monitor
+            description: Monitor description
+            application: Application name
+            service_id: Service ID (optional)
+            timeout: Connection timeout in milliseconds
+            run_interval: Monitor execution interval
+            owner_role_id: Owner role ID
+            **kwargs: Additional monitor configuration
+            
+        Returns:
+            Created port monitor information
+        """
+        port_check_info = PortCheckInfoRequest(
+            port_no=port_no,
+            service_id=service_id,
+            timeout=timeout
+        )
+        
+        numeric_value_info = [
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.INFO,
+                threshold_lower_limit=-1.0,
+                threshold_upper_limit=1.0,
+                message="Port response change is normal"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.WARNING,
+                threshold_lower_limit=-2.0,
+                threshold_upper_limit=2.0,
+                message="Port response change is in warning range"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.CRITICAL,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="Port response change is critical"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.UNKNOWN,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="Port response change monitoring failed"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.INFO,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=100.0,
+                message="Port response time is normal"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.WARNING,
+                threshold_lower_limit=100.0,
+                threshold_upper_limit=1000.0,
+                message="Port response time is slow"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.CRITICAL,
+                threshold_lower_limit=1000.0,
+                threshold_upper_limit=999999.0,
+                message="Port response time is very slow"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.UNKNOWN,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="Port monitoring unknown"
+            ),
+        ]
+        
+        monitor_request = AddPortMonitorRequest(
+            monitor_id=monitor_id,
+            facility_id=facility_id,
+            description=description or f"Port monitor for port {port_no}",
+            application=application,
+            run_interval=run_interval,
+            owner_role_id=owner_role_id,
+            item_name="応答時間",
+            measure="msec",
+            prediction_flg=False,
+            port_check_info=port_check_info,
+            numeric_value_info=numeric_value_info,
+            **kwargs
+        )
+        
+        return self.client.add_port_monitor(monitor_request)
+    
+    def update_port_monitor(
+        self,
+        monitor_id: str,
+        **kwargs
+    ) -> PortMonitorResponse:
+        """Update an existing port monitor.
+        
+        Args:
+            monitor_id: Monitor ID to update
+            **kwargs: Fields to update
+            
+        Returns:
+            Updated port monitor information
+        """
+        current = self.client.get_port_monitor_list()
+        current_monitor = next((m for m in current if m.monitor_id == monitor_id), None)
+        
+        if not current_monitor:
+            raise ValueError(f"Port monitor {monitor_id} not found")
+        
+        update_data = {}
+        for key, value in kwargs.items():
+            if value is not None:
+                update_data[key] = value
+        
+        if "port_check_info" in kwargs and kwargs["port_check_info"]:
+            port_info = kwargs["port_check_info"]
+            if isinstance(port_info, dict):
+                update_data["port_check_info"] = PortCheckInfoRequest(**port_info)
+        
+        modify_request = ModifyPortMonitorRequest(**update_data)
+        return self.client.modify_port_monitor(monitor_id, modify_request)
+    
+    def list_port_monitors(self) -> List[PortMonitorResponse]:
+        """List all port monitors.
+        
+        Returns:
+            List of port monitor information
+        """
+        return self.client.get_port_monitor_list()
+    
+    # Windows Event Monitoring
+    def create_winevent_monitor(
+        self,
+        monitor_id: str,
+        facility_id: str,
+        log_name: str,
+        description: str = None,
+        application: str = "Hinemos",
+        source: str = None,
+        level: int = None,
+        keywords: str = None,
+        run_interval: RunIntervalEnum = RunIntervalEnum.MIN_05,
+        owner_role_id: str = "ADMINISTRATORS",
+        error_patterns: List[str] = None,
+        warning_patterns: List[str] = None,
+        **kwargs
+    ) -> WinEventMonitorResponse:
+        """Create a new Windows Event monitor with simplified parameters.
+        
+        Args:
+            monitor_id: Unique monitor ID
+            facility_id: Target facility ID
+            log_name: Windows Event log name (e.g., "System", "Application")
+            description: Monitor description
+            application: Application name
+            source: Event source filter
+            level: Event level filter
+            keywords: Event keywords filter
+            run_interval: Monitor execution interval
+            owner_role_id: Owner role ID
+            error_patterns: List of patterns that indicate errors
+            warning_patterns: List of patterns that indicate warnings
+            **kwargs: Additional monitor configuration
+            
+        Returns:
+            Created Windows Event monitor information
+        """
+        winevent_check_info = WinEventCheckInfoRequest(
+            log_name=log_name,
+            source=source,
+            level=level,
+            keywords=keywords
+        )
+        
+        string_value_info = []
+        order_no = 1
+        
+        # Add error patterns
+        if error_patterns:
+            for pattern in error_patterns:
+                string_value_info.append(MonitorStringValueInfoRequest(
+                    order_no=order_no,
+                    priority=PriorityEnum.CRITICAL,
+                    pattern=pattern,
+                    message=f"Critical event detected: {pattern}",
+                    description=f"Error pattern: {pattern}",
+                    case_sensitivity_flg=False,
+                    process_type=True,
+                    valid_flg=True
+                ))
+                order_no += 1
+        
+        # Add warning patterns
+        if warning_patterns:
+            for pattern in warning_patterns:
+                string_value_info.append(MonitorStringValueInfoRequest(
+                    order_no=order_no,
+                    priority=PriorityEnum.WARNING,
+                    pattern=pattern,
+                    message=f"Warning event detected: {pattern}",
+                    description=f"Warning pattern: {pattern}",
+                    case_sensitivity_flg=False,
+                    process_type=True,
+                    valid_flg=True
+                ))
+                order_no += 1
+        
+        # Add default catch-all pattern if no patterns specified
+        if not error_patterns and not warning_patterns:
+            string_value_info.append(MonitorStringValueInfoRequest(
+                order_no=1,
+                priority=PriorityEnum.INFO,
+                pattern=".*",
+                message="Windows Event logged",
+                description="Default pattern for all events",
+                case_sensitivity_flg=False,
+                process_type=True,
+                valid_flg=True
+            ))
+        
+        monitor_request = AddWinEventMonitorRequest(
+            monitor_id=monitor_id,
+            facility_id=facility_id,
+            description=description or f"Windows Event monitor for {log_name}",
+            application=application,
+            run_interval=run_interval,
+            owner_role_id=owner_role_id,
+            winevent_check_info=winevent_check_info,
+            string_value_info=string_value_info,
+            **kwargs
+        )
+        
+        return self.client.add_winevent_monitor(monitor_request)
+    
+    def update_winevent_monitor(
+        self,
+        monitor_id: str,
+        **kwargs
+    ) -> WinEventMonitorResponse:
+        """Update an existing Windows Event monitor.
+        
+        Args:
+            monitor_id: Monitor ID to update
+            **kwargs: Fields to update
+            
+        Returns:
+            Updated Windows Event monitor information
+        """
+        current = self.client.get_winevent_monitor_list()
+        current_monitor = next((m for m in current if m.monitor_id == monitor_id), None)
+        
+        if not current_monitor:
+            raise ValueError(f"Windows Event monitor {monitor_id} not found")
+        
+        update_data = {}
+        for key, value in kwargs.items():
+            if value is not None:
+                update_data[key] = value
+        
+        if "winevent_check_info" in kwargs and kwargs["winevent_check_info"]:
+            winevent_info = kwargs["winevent_check_info"]
+            if isinstance(winevent_info, dict):
+                update_data["winevent_check_info"] = WinEventCheckInfoRequest(**winevent_info)
+        
+        modify_request = ModifyWinEventMonitorRequest(**update_data)
+        return self.client.modify_winevent_monitor(monitor_id, modify_request)
+    
+    def list_winevent_monitors(self) -> List[WinEventMonitorResponse]:
+        """List all Windows Event monitors.
+        
+        Returns:
+            List of Windows Event monitor information
+        """
+        return self.client.get_winevent_monitor_list()
+    
+    # Custom Command Monitoring
+    def create_custom_monitor(
+        self,
+        monitor_id: str,
+        facility_id: str,
+        command: str,
+        description: str = None,
+        application: str = "Hinemos",
+        timeout: int = 30000,
+        spec_flg: bool = False,
+        convert_flg: ConvertFlagEnum = ConvertFlagEnum.NONE,
+        run_interval: RunIntervalEnum = RunIntervalEnum.MIN_05,
+        owner_role_id: str = "ADMINISTRATORS",
+        warning_threshold: float = 80.0,
+        critical_threshold: float = 90.0,
+        **kwargs
+    ) -> CustomMonitorResponse:
+        """Create a new custom command monitor with simplified parameters.
+        
+        Args:
+            monitor_id: Unique monitor ID
+            facility_id: Target facility ID
+            command: Command to execute
+            description: Monitor description
+            application: Application name
+            timeout: Command timeout in milliseconds
+            spec_flg: Specification flag
+            convert_flg: Convert flag for delta calculation
+            run_interval: Monitor execution interval
+            owner_role_id: Owner role ID
+            warning_threshold: Warning threshold value
+            critical_threshold: Critical threshold value
+            **kwargs: Additional monitor configuration
+            
+        Returns:
+            Created custom monitor information
+        """
+        custom_check_info = CustomCheckInfoRequest(
+            command=command,
+            timeout=timeout,
+            spec_flg=spec_flg,
+            convert_flg=convert_flg
+        )
+        
+        numeric_value_info = [
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.INFO,
+                threshold_lower_limit=-1.0,
+                threshold_upper_limit=1.0,
+                message="Command result change is normal"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.WARNING,
+                threshold_lower_limit=-2.0,
+                threshold_upper_limit=2.0,
+                message="Command result change is in warning range"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.CRITICAL,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="Command result change is critical"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.CHANGE,
+                priority=PriorityEnum.UNKNOWN,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="Command result change monitoring failed"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.INFO,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=warning_threshold,
+                message="Command result is normal"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.WARNING,
+                threshold_lower_limit=warning_threshold,
+                threshold_upper_limit=critical_threshold,
+                message="Command result is in warning range"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.CRITICAL,
+                threshold_lower_limit=critical_threshold,
+                threshold_upper_limit=999999.0,
+                message="Command result is in critical range"
+            ),
+            MonitorNumericValueInfoRequest(
+                monitor_numeric_type=MonitorNumericTypeEnum.BASIC,
+                priority=PriorityEnum.UNKNOWN,
+                threshold_lower_limit=0.0,
+                threshold_upper_limit=0.0,
+                message="Command execution unknown"
+            ),
+        ]
+        
+        monitor_request = AddCustomMonitorRequest(
+            monitor_id=monitor_id,
+            facility_id=facility_id,
+            description=description or f"Custom monitor: {command}",
+            application=application,
+            run_interval=run_interval,
+            owner_role_id=owner_role_id,
+            item_name="$[CUSTOM_COMMAND_RESULT]",
+            measure="value",
+            custom_check_info=custom_check_info,
+            numeric_value_info=numeric_value_info,
+            **kwargs
+        )
+        
+        return self.client.add_custom_monitor(monitor_request)
+    
+    def update_custom_monitor(
+        self,
+        monitor_id: str,
+        **kwargs
+    ) -> CustomMonitorResponse:
+        """Update an existing custom monitor.
+        
+        Args:
+            monitor_id: Monitor ID to update
+            **kwargs: Fields to update
+            
+        Returns:
+            Updated custom monitor information
+        """
+        current = self.client.get_custom_monitor_list()
+        current_monitor = next((m for m in current if m.monitor_id == monitor_id), None)
+        
+        if not current_monitor:
+            raise ValueError(f"Custom monitor {monitor_id} not found")
+        
+        update_data = {}
+        for key, value in kwargs.items():
+            if value is not None:
+                update_data[key] = value
+        
+        if "custom_check_info" in kwargs and kwargs["custom_check_info"]:
+            custom_info = kwargs["custom_check_info"]
+            if isinstance(custom_info, dict):
+                update_data["custom_check_info"] = CustomCheckInfoRequest(**custom_info)
+        
+        modify_request = ModifyCustomMonitorRequest(**update_data)
+        return self.client.modify_custom_monitor(monitor_id, modify_request)
+    
+    def list_custom_monitors(self) -> List[CustomMonitorResponse]:
+        """List all custom monitors.
+        
+        Returns:
+            List of custom monitor information
+        """
+        return self.client.get_custom_monitor_list()

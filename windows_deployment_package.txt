@@ -1,0 +1,58 @@
+# Hinemos MCP Server - Windows Deployment Package
+# 必要なファイル一覧 (C:\Users\shida\hinemos-mcp-server にコピー)
+
+## 1. 必須ファイル構造
+src/
+├── hinemos_mcp/
+│   ├── __init__.py
+│   ├── client.py
+│   ├── models.py
+│   ├── monitor.py
+│   ├── monitor_models.py
+│   ├── repository.py
+│   └── server/
+│       ├── __init__.py
+│       ├── fastmcp_server.py
+│       └── server.py
+
+## 2. エントリーポイント
+hinemos_fastmcp_server.py  (FastMCP サーバ起動用)
+hinemos_mcp_server.py      (標準MCP サーバ起動用)
+
+## 3. 設定ファイル
+pyproject.toml             (依存関係定義)
+mcp_config_template.json   (設定テンプレート)
+
+## 4. ドキュメント
+README.md
+docs/
+├── mcp-server.md
+├── api-reference.md
+└── examples.md
+
+## 5. 例とサンプル
+examples/
+├── monitor_example.py
+├── repository_example.py
+└── new_monitors_example.py
+
+## 6. 統合テスト (optional)
+integration/
+├── config.py
+├── test_facilities.py
+└── test_monitor_integration.py
+
+## 7. 基本テスト (optional)  
+tests/
+├── test_mcp_tools.py
+├── test_rest_endpoints.py
+└── run_all_tests.py
+
+## Windows環境での動作確認手順:
+1. Python 3.8+ がインストールされていることを確認
+2. 必要な依存関係をインストール: pip install -r requirements.txt
+3. 環境変数を設定:
+   - HINEMOS_BASE_URL=http://3.113.245.85:8080/HinemosWeb/api
+   - HINEMOS_USERNAME=hinemos
+   - HINEMOS_PASSWORD=hinemos
+4. FastMCPサーバを起動: python hinemos_fastmcp_server.py

@@ -251,7 +251,7 @@ class HinemosMCPServer:
                             "properties": {
                                 "monitor_type": {
                                     "type": "string",
-                                    "enum": ["ping", "http_numeric", "http_string", "snmp", "logfile"],
+                                    "enum": ["ping", "http_numeric", "http_string", "snmp", "logfile", "sql", "jmx", "process", "port", "winevent", "custom"],
                                     "description": "Type of monitor to create"
                                 },
                                 "monitor_id": {
@@ -324,6 +324,117 @@ class HinemosMCPServer:
                                     "type": "string",
                                     "description": "File encoding (logfile monitors)",
                                     "default": "UTF-8"
+                                },
+                                # SQL specific parameters
+                                "connection_url": {
+                                    "type": "string",
+                                    "description": "Database connection URL (sql monitors)"
+                                },
+                                "user": {
+                                    "type": "string",
+                                    "description": "Database user (sql monitors)"
+                                },
+                                "password": {
+                                    "type": "string",
+                                    "description": "Database password (sql monitors)"
+                                },
+                                "jdbc_driver": {
+                                    "type": "string",
+                                    "description": "JDBC driver class name (sql monitors)"
+                                },
+                                "sql": {
+                                    "type": "string",
+                                    "description": "SQL query to execute (sql monitors)"
+                                },
+                                # JMX specific parameters
+                                "port": {
+                                    "type": "integer",
+                                    "description": "JMX port number (jmx monitors)"
+                                },
+                                "auth_user": {
+                                    "type": "string",
+                                    "description": "JMX authentication user (jmx monitors)"
+                                },
+                                "auth_password": {
+                                    "type": "string",
+                                    "description": "JMX authentication password (jmx monitors)"
+                                },
+                                # Process specific parameters
+                                "param": {
+                                    "type": "string",
+                                    "description": "Process parameter to monitor (process monitors)"
+                                },
+                                "case_sensitivity_flg": {
+                                    "type": "boolean",
+                                    "description": "Case sensitivity flag (process monitors)",
+                                    "default": True
+                                },
+                                "min_count": {
+                                    "type": "integer",
+                                    "description": "Minimum expected process count (process monitors)",
+                                    "default": 1
+                                },
+                                "max_count": {
+                                    "type": "integer",
+                                    "description": "Maximum expected process count (process monitors)",
+                                    "default": 10
+                                },
+                                # Port specific parameters
+                                "port_no": {
+                                    "type": "integer",
+                                    "description": "Port number to monitor (port monitors)"
+                                },
+                                "service_id": {
+                                    "type": "string",
+                                    "description": "Service ID (port monitors)"
+                                },
+                                # Windows Event specific parameters
+                                "log_name": {
+                                    "type": "string",
+                                    "description": "Windows Event log name (winevent monitors)"
+                                },
+                                "source": {
+                                    "type": "string",
+                                    "description": "Event source filter (winevent monitors)"
+                                },
+                                "level": {
+                                    "type": "integer",
+                                    "description": "Event level filter (winevent monitors)"
+                                },
+                                "keywords": {
+                                    "type": "string",
+                                    "description": "Event keywords filter (winevent monitors)"
+                                },
+                                "error_patterns": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "description": "List of error patterns (winevent monitors)"
+                                },
+                                "warning_patterns": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "description": "List of warning patterns (winevent monitors)"
+                                },
+                                # Custom monitor specific parameters
+                                "command": {
+                                    "type": "string",
+                                    "description": "Command to execute (custom monitors)"
+                                },
+                                "spec_flg": {
+                                    "type": "boolean",
+                                    "description": "Specification flag (custom monitors)",
+                                    "default": False
+                                },
+                                # Common numeric threshold parameters
+                                "warning_threshold": {
+                                    "type": "number",
+                                    "description": "Warning threshold value (numeric monitors)",
+                                    "default": 80.0
+                                },
+                                "critical_threshold": {
+                                    "type": "number",
+                                    "description": "Critical threshold value (numeric monitors)",
+                                    "default": 90.0
                                 }
                             },
                             "required": ["monitor_type", "monitor_id", "facility_id"]
@@ -571,6 +682,70 @@ class HinemosMCPServer:
                                 filename=arguments["filename"],
                                 patterns=patterns,
                                 encoding=arguments.get("encoding", "UTF-8"),
+                                **common_params
+                            )
+                        
+                        elif monitor_type == "sql":
+                            monitor = monitor_api.create_sql_monitor(
+                                connection_url=arguments["connection_url"],
+                                user=arguments["user"],
+                                password=arguments["password"],
+                                jdbc_driver=arguments["jdbc_driver"],
+                                sql=arguments["sql"],
+                                timeout=arguments.get("timeout", 5000),
+                                warning_threshold=arguments.get("warning_threshold", 80.0),
+                                critical_threshold=arguments.get("critical_threshold", 90.0),
+                                **common_params
+                            )
+                        
+                        elif monitor_type == "jmx":
+                            monitor = monitor_api.create_jmx_monitor(
+                                port=arguments["port"],
+                                auth_user=arguments.get("auth_user"),
+                                auth_password=arguments.get("auth_password"),
+                                url=arguments.get("url"),
+                                convert_flg=ConvertFlagEnum(arguments.get("convert_flg", "NONE")),
+                                warning_threshold=arguments.get("warning_threshold", 80.0),
+                                critical_threshold=arguments.get("critical_threshold", 90.0),
+                                **common_params
+                            )
+                        
+                        elif monitor_type == "process":
+                            monitor = monitor_api.create_process_monitor(
+                                param=arguments["param"],
+                                case_sensitivity_flg=arguments.get("case_sensitivity_flg", True),
+                                min_count=arguments.get("min_count", 1),
+                                max_count=arguments.get("max_count", 10),
+                                **common_params
+                            )
+                        
+                        elif monitor_type == "port":
+                            monitor = monitor_api.create_port_monitor(
+                                port_no=arguments["port_no"],
+                                service_id=arguments.get("service_id"),
+                                timeout=arguments.get("timeout", 5000),
+                                **common_params
+                            )
+                        
+                        elif monitor_type == "winevent":
+                            monitor = monitor_api.create_winevent_monitor(
+                                log_name=arguments["log_name"],
+                                source=arguments.get("source"),
+                                level=arguments.get("level"),
+                                keywords=arguments.get("keywords"),
+                                error_patterns=arguments.get("error_patterns"),
+                                warning_patterns=arguments.get("warning_patterns"),
+                                **common_params
+                            )
+                        
+                        elif monitor_type == "custom":
+                            monitor = monitor_api.create_custom_monitor(
+                                command=arguments["command"],
+                                timeout=arguments.get("timeout", 30000),
+                                spec_flg=arguments.get("spec_flg", False),
+                                convert_flg=ConvertFlagEnum(arguments.get("convert_flg", "NONE")),
+                                warning_threshold=arguments.get("warning_threshold", 80.0),
+                                critical_threshold=arguments.get("critical_threshold", 90.0),
                                 **common_params
                             )
                         

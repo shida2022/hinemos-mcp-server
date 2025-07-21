@@ -159,3 +159,6 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Integration tests with real server credentials
+integration/

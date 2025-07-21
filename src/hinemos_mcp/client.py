@@ -29,16 +29,34 @@ from .monitor_models import (
     AddHttpStringMonitorRequest,
     AddSnmpNumericMonitorRequest,
     AddLogfileMonitorRequest,
+    AddSqlMonitorRequest,
+    AddJmxMonitorRequest,
+    AddProcessMonitorRequest,
+    AddPortMonitorRequest,
+    AddWinEventMonitorRequest,
+    AddCustomMonitorRequest,
     CollectorValidRequest,
     GetMonitorListRequest,
     HttpNumericMonitorResponse,
     HttpStringMonitorResponse,
     LogfileMonitorResponse,
+    SqlMonitorResponse,
+    JmxMonitorResponse,
+    ProcessMonitorResponse,
+    PortMonitorResponse,
+    WinEventMonitorResponse,
+    CustomMonitorResponse,
     ModifyPingMonitorRequest,
     ModifyHttpNumericMonitorRequest,
     ModifyHttpStringMonitorRequest,
     ModifySnmpNumericMonitorRequest,
     ModifyLogfileMonitorRequest,
+    ModifySqlMonitorRequest,
+    ModifyJmxMonitorRequest,
+    ModifyProcessMonitorRequest,
+    ModifyPortMonitorRequest,
+    ModifyWinEventMonitorRequest,
+    ModifyCustomMonitorRequest,
     MonitorValidRequest,
     PingMonitorResponse,
     SnmpNumericMonitorResponse,
@@ -654,3 +672,225 @@ class HinemosClient:
         """
         response_data = self._make_request("GET", "/monitorsetting/logfile")
         return [LogfileMonitorResponse(**monitor) for monitor in response_data]
+    
+    # SQL monitoring
+    def add_sql_monitor(self, monitor: AddSqlMonitorRequest) -> SqlMonitorResponse:
+        """Add a new SQL monitor.
+        
+        Args:
+            monitor: SQL monitor configuration
+            
+        Returns:
+            Created SQL monitor information
+        """
+        json_data = monitor.model_dump(by_alias=True, exclude_none=True)
+        response_data = self._make_request("POST", "/monitorsetting/sqlNumeric", json_data=json_data)
+        return SqlMonitorResponse(**response_data)
+    
+    def modify_sql_monitor(self, monitor_id: str, monitor: ModifySqlMonitorRequest) -> SqlMonitorResponse:
+        """Modify an existing SQL monitor.
+        
+        Args:
+            monitor_id: Monitor ID to modify
+            monitor: SQL monitor configuration
+            
+        Returns:
+            Updated SQL monitor information
+        """
+        json_data = monitor.model_dump(by_alias=True, exclude_none=True)
+        response_data = self._make_request("PUT", f"/monitorsetting/sqlNumeric/{monitor_id}", json_data=json_data)
+        return SqlMonitorResponse(**response_data)
+    
+    def get_sql_monitor_list(self) -> List[SqlMonitorResponse]:
+        """Get SQL monitor list.
+        
+        Returns:
+            List of SQL monitor information
+        """
+        response_data = self._make_request("GET", "/monitorsetting/sqlNumeric")
+        return [SqlMonitorResponse(**monitor) for monitor in response_data]
+    
+    # JMX monitoring
+    def add_jmx_monitor(self, monitor: AddJmxMonitorRequest) -> JmxMonitorResponse:
+        """Add a new JMX monitor.
+        
+        Args:
+            monitor: JMX monitor configuration
+            
+        Returns:
+            Created JMX monitor information
+        """
+        json_data = monitor.model_dump(by_alias=True, exclude_none=True)
+        response_data = self._make_request("POST", "/monitorsetting/jmx", json_data=json_data)
+        return JmxMonitorResponse(**response_data)
+    
+    def modify_jmx_monitor(self, monitor_id: str, monitor: ModifyJmxMonitorRequest) -> JmxMonitorResponse:
+        """Modify an existing JMX monitor.
+        
+        Args:
+            monitor_id: Monitor ID to modify
+            monitor: JMX monitor configuration
+            
+        Returns:
+            Updated JMX monitor information
+        """
+        json_data = monitor.model_dump(by_alias=True, exclude_none=True)
+        response_data = self._make_request("PUT", f"/monitorsetting/jmx/{monitor_id}", json_data=json_data)
+        return JmxMonitorResponse(**response_data)
+    
+    def get_jmx_monitor_list(self) -> List[JmxMonitorResponse]:
+        """Get JMX monitor list.
+        
+        Returns:
+            List of JMX monitor information
+        """
+        response_data = self._make_request("GET", "/monitorsetting/jmx")
+        return [JmxMonitorResponse(**monitor) for monitor in response_data]
+    
+    # Process monitoring
+    def add_process_monitor(self, monitor: AddProcessMonitorRequest) -> ProcessMonitorResponse:
+        """Add a new process monitor.
+        
+        Args:
+            monitor: Process monitor configuration
+            
+        Returns:
+            Created process monitor information
+        """
+        json_data = monitor.model_dump(by_alias=True, exclude_none=True)
+        response_data = self._make_request("POST", "/monitorsetting/process", json_data=json_data)
+        return ProcessMonitorResponse(**response_data)
+    
+    def modify_process_monitor(self, monitor_id: str, monitor: ModifyProcessMonitorRequest) -> ProcessMonitorResponse:
+        """Modify an existing process monitor.
+        
+        Args:
+            monitor_id: Monitor ID to modify
+            monitor: Process monitor configuration
+            
+        Returns:
+            Updated process monitor information
+        """
+        json_data = monitor.model_dump(by_alias=True, exclude_none=True)
+        response_data = self._make_request("PUT", f"/monitorsetting/process/{monitor_id}", json_data=json_data)
+        return ProcessMonitorResponse(**response_data)
+    
+    def get_process_monitor_list(self) -> List[ProcessMonitorResponse]:
+        """Get process monitor list.
+        
+        Returns:
+            List of process monitor information
+        """
+        response_data = self._make_request("GET", "/monitorsetting/process")
+        return [ProcessMonitorResponse(**monitor) for monitor in response_data]
+    
+    # Port monitoring
+    def add_port_monitor(self, monitor: AddPortMonitorRequest) -> PortMonitorResponse:
+        """Add a new port monitor.
+        
+        Args:
+            monitor: Port monitor configuration
+            
+        Returns:
+            Created port monitor information
+        """
+        json_data = monitor.model_dump(by_alias=True, exclude_none=True)
+        response_data = self._make_request("POST", "/monitorsetting/serviceport", json_data=json_data)
+        return PortMonitorResponse(**response_data)
+    
+    def modify_port_monitor(self, monitor_id: str, monitor: ModifyPortMonitorRequest) -> PortMonitorResponse:
+        """Modify an existing port monitor.
+        
+        Args:
+            monitor_id: Monitor ID to modify
+            monitor: Port monitor configuration
+            
+        Returns:
+            Updated port monitor information
+        """
+        json_data = monitor.model_dump(by_alias=True, exclude_none=True)
+        response_data = self._make_request("PUT", f"/monitorsetting/serviceport/{monitor_id}", json_data=json_data)
+        return PortMonitorResponse(**response_data)
+    
+    def get_port_monitor_list(self) -> List[PortMonitorResponse]:
+        """Get port monitor list.
+        
+        Returns:
+            List of port monitor information
+        """
+        response_data = self._make_request("GET", "/monitorsetting/serviceport")
+        return [PortMonitorResponse(**monitor) for monitor in response_data]
+    
+    # Windows Event monitoring
+    def add_winevent_monitor(self, monitor: AddWinEventMonitorRequest) -> WinEventMonitorResponse:
+        """Add a new Windows Event monitor.
+        
+        Args:
+            monitor: Windows Event monitor configuration
+            
+        Returns:
+            Created Windows Event monitor information
+        """
+        json_data = monitor.model_dump(by_alias=True, exclude_none=True)
+        response_data = self._make_request("POST", "/monitorsetting/winevent", json_data=json_data)
+        return WinEventMonitorResponse(**response_data)
+    
+    def modify_winevent_monitor(self, monitor_id: str, monitor: ModifyWinEventMonitorRequest) -> WinEventMonitorResponse:
+        """Modify an existing Windows Event monitor.
+        
+        Args:
+            monitor_id: Monitor ID to modify
+            monitor: Windows Event monitor configuration
+            
+        Returns:
+            Updated Windows Event monitor information
+        """
+        json_data = monitor.model_dump(by_alias=True, exclude_none=True)
+        response_data = self._make_request("PUT", f"/monitorsetting/winevent/{monitor_id}", json_data=json_data)
+        return WinEventMonitorResponse(**response_data)
+    
+    def get_winevent_monitor_list(self) -> List[WinEventMonitorResponse]:
+        """Get Windows Event monitor list.
+        
+        Returns:
+            List of Windows Event monitor information
+        """
+        response_data = self._make_request("GET", "/monitorsetting/winevent")
+        return [WinEventMonitorResponse(**monitor) for monitor in response_data]
+    
+    # Custom monitoring
+    def add_custom_monitor(self, monitor: AddCustomMonitorRequest) -> CustomMonitorResponse:
+        """Add a new custom monitor.
+        
+        Args:
+            monitor: Custom monitor configuration
+            
+        Returns:
+            Created custom monitor information
+        """
+        json_data = monitor.model_dump(by_alias=True, exclude_none=True)
+        response_data = self._make_request("POST", "/monitorsetting/customNumeric", json_data=json_data)
+        return CustomMonitorResponse(**response_data)
+    
+    def modify_custom_monitor(self, monitor_id: str, monitor: ModifyCustomMonitorRequest) -> CustomMonitorResponse:
+        """Modify an existing custom monitor.
+        
+        Args:
+            monitor_id: Monitor ID to modify
+            monitor: Custom monitor configuration
+            
+        Returns:
+            Updated custom monitor information
+        """
+        json_data = monitor.model_dump(by_alias=True, exclude_none=True)
+        response_data = self._make_request("PUT", f"/monitorsetting/customNumeric/{monitor_id}", json_data=json_data)
+        return CustomMonitorResponse(**response_data)
+    
+    def get_custom_monitor_list(self) -> List[CustomMonitorResponse]:
+        """Get custom monitor list.
+        
+        Returns:
+            List of custom monitor information
+        """
+        response_data = self._make_request("GET", "/monitorsetting/customNumeric")
+        return [CustomMonitorResponse(**monitor) for monitor in response_data]

@@ -217,46 +217,296 @@ class HinemosFastMCPServer:
                 return f"Error: {str(e)}"
         
         @self.mcp.tool()
-        def hinemos_create_ping_monitor(
+        def hinemos_create_monitor(
+            monitor_type: str,
             monitor_id: str,
             facility_id: str,
             description: str = "",
             run_interval: str = "MIN_05",
-            run_count: int = 3,
-            timeout: int = 5000
+            # Ping specific parameters
+            run_count: Optional[int] = None,
+            timeout: Optional[int] = None,
+            # HTTP specific parameters
+            url: Optional[str] = None,
+            patterns: Optional[List[Dict[str, str]]] = None,
+            # SNMP specific parameters
+            oid: Optional[str] = None,
+            convert_flg: Optional[str] = None,
+            # Logfile specific parameters
+            directory: Optional[str] = None,
+            filename: Optional[str] = None,
+            encoding: Optional[str] = None,
+            # SQL specific parameters
+            connection_url: Optional[str] = None,
+            user: Optional[str] = None,
+            password: Optional[str] = None,
+            jdbc_driver: Optional[str] = None,
+            sql: Optional[str] = None,
+            # JMX specific parameters
+            port: Optional[int] = None,
+            auth_user: Optional[str] = None,
+            auth_password: Optional[str] = None,
+            # Process specific parameters
+            param: Optional[str] = None,
+            case_sensitivity_flg: Optional[bool] = None,
+            min_count: Optional[int] = None,
+            max_count: Optional[int] = None,
+            # Port specific parameters
+            port_no: Optional[int] = None,
+            service_id: Optional[str] = None,
+            # Windows Event specific parameters
+            log_name: Optional[str] = None,
+            source: Optional[str] = None,
+            level: Optional[int] = None,
+            keywords: Optional[str] = None,
+            error_patterns: Optional[List[str]] = None,
+            warning_patterns: Optional[List[str]] = None,
+            # Custom monitor specific parameters
+            command: Optional[str] = None,
+            spec_flg: Optional[bool] = None,
+            # Common threshold parameters
+            warning_threshold: Optional[float] = None,
+            critical_threshold: Optional[float] = None
         ) -> str:
-            """Create a new ping monitor configuration.
+            """Create a new monitor configuration.
             
             Args:
+                monitor_type: Type of monitor (ping, http_numeric, http_string, snmp, logfile, sql, jmx, process, port, winevent, custom)
                 monitor_id: Unique monitor ID
                 facility_id: Target facility ID
                 description: Monitor description
                 run_interval: Monitoring interval (MIN_01, MIN_05, MIN_10, MIN_30, MIN_60)
-                run_count: Number of ping attempts
-                timeout: Timeout in milliseconds
+                
+                # Ping monitor parameters:
+                run_count: Number of ping attempts (default: 3)
+                timeout: Timeout in milliseconds (default: 5000)
+                
+                # HTTP monitor parameters:
+                url: URL to monitor
+                timeout: Timeout in milliseconds (default: 10000)
+                patterns: String patterns for HTTP string monitoring
+                
+                # SNMP monitor parameters:
+                oid: SNMP OID
+                convert_flg: Convert flag (NONE, DELTA)
+                
+                # Logfile monitor parameters:
+                directory: Log file directory
+                filename: Log file name pattern
+                encoding: File encoding (default: UTF-8)
+                patterns: String patterns to match
+                
+                # SQL monitor parameters:
+                connection_url: Database connection URL
+                user: Database user
+                password: Database password
+                jdbc_driver: JDBC driver class name
+                sql: SQL query to execute
+                timeout: Query timeout (default: 5000)
+                warning_threshold: Warning threshold value
+                critical_threshold: Critical threshold value
+                
+                # JMX monitor parameters:
+                port: JMX port number
+                auth_user: JMX authentication user
+                auth_password: JMX authentication password
+                url: JMX URL pattern
+                convert_flg: Convert flag (NONE, DELTA)
+                warning_threshold: Warning threshold value
+                critical_threshold: Critical threshold value
+                
+                # Process monitor parameters:
+                param: Process parameter to monitor
+                case_sensitivity_flg: Case sensitivity flag (default: True)
+                min_count: Minimum expected process count (default: 1)
+                max_count: Maximum expected process count (default: 10)
+                
+                # Port monitor parameters:
+                port_no: Port number to monitor
+                service_id: Service ID
+                timeout: Connection timeout (default: 5000)
+                
+                # Windows Event monitor parameters:
+                log_name: Windows Event log name
+                source: Event source filter
+                level: Event level filter
+                keywords: Event keywords filter
+                error_patterns: List of error patterns
+                warning_patterns: List of warning patterns
+                
+                # Custom monitor parameters:
+                command: Command to execute
+                timeout: Command timeout (default: 30000)
+                spec_flg: Specification flag (default: False)
+                convert_flg: Convert flag (NONE, DELTA)
+                warning_threshold: Warning threshold value
+                critical_threshold: Critical threshold value
                 
             Returns:
                 JSON string containing creation result
             """
             try:
+                # Validate monitor type
+                valid_types = ["ping", "http_numeric", "http_string", "snmp", "logfile", "sql", "jmx", "process", "port", "winevent", "custom"]
+                if monitor_type not in valid_types:
+                    return f"Error: Invalid monitor_type '{monitor_type}'. Valid types: {', '.join(valid_types)}"
+                
                 with HinemosClient(**self.config) as client:
                     monitor_api = MonitorAPI(client)
                     
-                    monitor = monitor_api.create_ping_monitor(
-                        monitor_id=monitor_id,
-                        facility_id=facility_id,
-                        description=description,
-                        run_interval=RunIntervalEnum(run_interval),
-                        run_count=run_count,
-                        timeout=timeout,
-                        prediction_flg=False,
-                        change_flg=False
-                    )
+                    # Common parameters
+                    common_params = {
+                        "monitor_id": monitor_id,
+                        "facility_id": facility_id,
+                        "description": description,
+                        "run_interval": RunIntervalEnum(run_interval),
+                        "prediction_flg": False,  # Disable prediction by default
+                        "change_flg": False       # Disable change monitoring by default
+                    }
+                    
+                    if monitor_type == "ping":
+                        monitor = monitor_api.create_ping_monitor(
+                            run_count=run_count or 3,
+                            timeout=timeout or 5000,
+                            **common_params
+                        )
+                    
+                    elif monitor_type == "http_numeric":
+                        if not url:
+                            return "Error: 'url' parameter is required for HTTP numeric monitors"
+                        monitor = monitor_api.create_http_numeric_monitor(
+                            url=url,
+                            timeout=timeout or 10000,
+                            **common_params
+                        )
+                    
+                    elif monitor_type == "http_string":
+                        if not url:
+                            return "Error: 'url' parameter is required for HTTP string monitors"
+                        if not patterns:
+                            patterns = [
+                                {
+                                    "pattern": ".*error.*",
+                                    "priority": "CRITICAL",
+                                    "message": "Error pattern found"
+                                }
+                            ]
+                        monitor = monitor_api.create_http_string_monitor(
+                            url=url,
+                            patterns=patterns,
+                            timeout=timeout or 10000,
+                            **common_params
+                        )
+                    
+                    elif monitor_type == "snmp":
+                        if not oid:
+                            return "Error: 'oid' parameter is required for SNMP monitors"
+                        monitor = monitor_api.create_snmp_monitor(
+                            oid=oid,
+                            convert_flg=ConvertFlagEnum(convert_flg or "NONE"),
+                            **common_params
+                        )
+                    
+                    elif monitor_type == "logfile":
+                        if not directory or not filename:
+                            return "Error: 'directory' and 'filename' parameters are required for logfile monitors"
+                        if not patterns:
+                            patterns = [
+                                {
+                                    "pattern": ".*error.*",
+                                    "priority": "CRITICAL",
+                                    "message": "Error pattern found"
+                                }
+                            ]
+                        monitor = monitor_api.create_logfile_monitor(
+                            directory=directory,
+                            filename=filename,
+                            patterns=patterns,
+                            encoding=encoding or "UTF-8",
+                            **common_params
+                        )
+                    
+                    elif monitor_type == "sql":
+                        required_sql_params = [connection_url, user, password, jdbc_driver, sql]
+                        if not all(required_sql_params):
+                            return "Error: 'connection_url', 'user', 'password', 'jdbc_driver', and 'sql' parameters are required for SQL monitors"
+                        monitor = monitor_api.create_sql_monitor(
+                            connection_url=connection_url,
+                            user=user,
+                            password=password,
+                            jdbc_driver=jdbc_driver,
+                            sql=sql,
+                            timeout=timeout or 5000,
+                            warning_threshold=warning_threshold or 80.0,
+                            critical_threshold=critical_threshold or 90.0,
+                            **common_params
+                        )
+                    
+                    elif monitor_type == "jmx":
+                        if not port:
+                            return "Error: 'port' parameter is required for JMX monitors"
+                        monitor = monitor_api.create_jmx_monitor(
+                            port=port,
+                            auth_user=auth_user,
+                            auth_password=auth_password,
+                            url=url,
+                            convert_flg=ConvertFlagEnum(convert_flg or "NONE"),
+                            warning_threshold=warning_threshold or 80.0,
+                            critical_threshold=critical_threshold or 90.0,
+                            **common_params
+                        )
+                    
+                    elif monitor_type == "process":
+                        if not param:
+                            return "Error: 'param' parameter is required for process monitors"
+                        monitor = monitor_api.create_process_monitor(
+                            param=param,
+                            case_sensitivity_flg=case_sensitivity_flg if case_sensitivity_flg is not None else True,
+                            min_count=min_count or 1,
+                            max_count=max_count or 10,
+                            **common_params
+                        )
+                    
+                    elif monitor_type == "port":
+                        if not port_no:
+                            return "Error: 'port_no' parameter is required for port monitors"
+                        monitor = monitor_api.create_port_monitor(
+                            port_no=port_no,
+                            service_id=service_id,
+                            timeout=timeout or 5000,
+                            **common_params
+                        )
+                    
+                    elif monitor_type == "winevent":
+                        if not log_name:
+                            return "Error: 'log_name' parameter is required for Windows Event monitors"
+                        monitor = monitor_api.create_winevent_monitor(
+                            log_name=log_name,
+                            source=source,
+                            level=level,
+                            keywords=keywords,
+                            error_patterns=error_patterns,
+                            warning_patterns=warning_patterns,
+                            **common_params
+                        )
+                    
+                    elif monitor_type == "custom":
+                        if not command:
+                            return "Error: 'command' parameter is required for custom monitors"
+                        monitor = monitor_api.create_custom_monitor(
+                            command=command,
+                            timeout=timeout or 30000,
+                            spec_flg=spec_flg if spec_flg is not None else False,
+                            convert_flg=ConvertFlagEnum(convert_flg or "NONE"),
+                            warning_threshold=warning_threshold or 80.0,
+                            critical_threshold=critical_threshold or 90.0,
+                            **common_params
+                        )
                     
                     result = {
                         "status": "created",
                         "monitor_id": monitor.monitor_id,
-                        "monitor_type": "ping",
+                        "monitor_type": monitor_type,
                         "description": monitor.description
                     }
                     

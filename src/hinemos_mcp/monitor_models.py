@@ -214,7 +214,7 @@ class MonitorStringValueInfoResponse(BaseModel):
 # 基底リクエスト・レスポンスクラス
 class AbstractMonitorRequest(BaseModel):
     """監視設定リクエスト基底クラス."""
-    application: Optional[str] = None
+    application: str = "Hinemos"
     description: Optional[str] = None
     monitor_flg: bool = Field(True, alias="monitorFlg")
     run_interval: RunIntervalEnum = Field(RunIntervalEnum.MIN_05, alias="runInterval")
@@ -246,9 +246,20 @@ class AbstractAddMonitorRequest(AbstractMonitorRequest):
         populate_by_name = True
 
 
-class AbstractModifyMonitorRequest(AbstractMonitorRequest):
+class AbstractModifyMonitorRequest(BaseModel):
     """監視設定更新リクエスト基底クラス."""
-    pass
+    application: Optional[str] = None
+    description: Optional[str] = None
+    monitor_flg: Optional[bool] = Field(None, alias="monitorFlg")
+    run_interval: Optional[RunIntervalEnum] = Field(None, alias="runInterval")
+    calendar_id: Optional[str] = Field(None, alias="calendarId")
+    facility_id: Optional[str] = Field(None, alias="facilityId")
+    notify_relation_list: Optional[List[NotifyRelationInfoRequest]] = Field(
+        None, alias="notifyRelationList"
+    )
+    
+    class Config:
+        populate_by_name = True
 
 
 class AbstractMonitorResponse(BaseModel):
@@ -281,19 +292,20 @@ class AbstractMonitorResponse(BaseModel):
 class AbstractAddNumericMonitorRequest(AbstractAddMonitorRequest):
     """数値監視追加リクエスト基底クラス."""
     collector_flg: bool = Field(True, alias="collectorFlg")
-    item_name: Optional[str] = Field(None, alias="itemName")
-    measure: Optional[str] = None
-    prediction_flg: bool = Field(False, alias="predictionFlg")
-    prediction_method: Optional[PredictionMethodEnum] = Field(None, alias="predictionMethod")
-    prediction_analysys_range: Optional[int] = Field(None, alias="predictionAnalysysRange")
-    prediction_target: Optional[int] = Field(None, alias="predictionTarget")
-    prediction_application: Optional[str] = Field(None, alias="predictionApplication")
+    item_name: str = Field("取得値", alias="itemName")
+    measure: str = "収集値単位"
+    prediction_flg: bool = Field(True, alias="predictionFlg")
+    prediction_method: PredictionMethodEnum = Field(PredictionMethodEnum.POLYNOMIAL_1, alias="predictionMethod")
+    prediction_analysys_range: int = Field(60, alias="predictionAnalysysRange")
+    prediction_target: int = Field(60, alias="predictionTarget")
+    prediction_application: str = Field("Hinemos", alias="predictionApplication")
     change_flg: bool = Field(False, alias="changeFlg")
-    change_analysys_range: Optional[int] = Field(None, alias="changeAnalysysRange")
+    change_analysys_range: int = Field(60, alias="changeAnalysysRange")
     change_application: Optional[str] = Field(None, alias="changeApplication")
     numeric_value_info: List[MonitorNumericValueInfoRequest] = Field(
         default_factory=list, alias="numericValueInfo"
     )
+    failure_priority: PriorityEnum = Field(PriorityEnum.UNKNOWN, alias="failurePriority")
     prediction_notify_relation_list: List[NotifyRelationInfoRequest] = Field(
         default_factory=list, alias="predictionNotifyRelationList"
     )
@@ -514,6 +526,143 @@ class LogfileCheckInfoResponse(BaseModel):
         populate_by_name = True
 
 
+class SqlCheckInfoRequest(BaseModel):
+    """SQL監視設定リクエスト."""
+    connection_url: str = Field(alias="connectionUrl")
+    user: str
+    password: str
+    jdbc_driver: str = Field(alias="jdbcDriver")
+    query: str
+    timeout: int = Field(5000, alias="timeout")
+
+    class Config:
+        populate_by_name = True
+
+
+class SqlCheckInfoResponse(BaseModel):
+    """SQL監視設定レスポンス."""
+    connection_url: Optional[str] = Field(None, alias="connectionUrl")
+    user: Optional[str] = None
+    password: Optional[str] = None
+    jdbc_driver: Optional[str] = Field(None, alias="jdbcDriver")
+    sql: Optional[str] = None
+    timeout: Optional[int] = Field(None, alias="timeout")
+
+    class Config:
+        populate_by_name = True
+
+
+class JmxCheckInfoRequest(BaseModel):
+    """JMX監視設定リクエスト."""
+    port: int
+    auth_user: Optional[str] = Field(None, alias="authUser")
+    auth_password: Optional[str] = Field(None, alias="authPassword")
+    url: Optional[str] = None
+    convert_flg: ConvertFlagEnum = Field(ConvertFlagEnum.NONE, alias="convertFlg")
+    master_id: str = Field("JMX_MEMORY_HEAP_COMMITTED", alias="masterId")
+    url_format_name: str = Field("Default", alias="urlFormatName")
+
+    class Config:
+        populate_by_name = True
+
+
+class JmxCheckInfoResponse(BaseModel):
+    """JMX監視設定レスポンス."""
+    port: Optional[int] = None
+    auth_user: Optional[str] = Field(None, alias="authUser")
+    auth_password: Optional[str] = Field(None, alias="authPassword")
+    url: Optional[str] = None
+    convert_flg: Optional[ConvertFlagEnum] = Field(None, alias="convertFlg")
+
+    class Config:
+        populate_by_name = True
+
+
+class ProcessCheckInfoRequest(BaseModel):
+    """プロセス監視設定リクエスト."""
+    param: str
+    case_sensitivity_flg: bool = Field(True, alias="caseSensitivityFlg")
+    command: str = "ps"
+
+    class Config:
+        populate_by_name = True
+
+
+class ProcessCheckInfoResponse(BaseModel):
+    """プロセス監視設定レスポンス."""
+    param: Optional[str] = None
+    case_sensitivity_flg: Optional[bool] = Field(None, alias="caseSensitivityFlg")
+
+    class Config:
+        populate_by_name = True
+
+
+class PortCheckInfoRequest(BaseModel):
+    """ポート監視設定リクエスト."""
+    port_no: int = Field(alias="portNo")
+    service_id: Optional[str] = Field(None, alias="serviceId")
+    timeout: int = Field(5000, alias="timeout")
+    run_count: int = Field(1, alias="runCount")
+    run_interval: int = Field(1000, alias="runInterval")
+
+    class Config:
+        populate_by_name = True
+
+
+class PortCheckInfoResponse(BaseModel):
+    """ポート監視設定レスポンス."""
+    port_no: Optional[int] = Field(None, alias="portNo")
+    service_id: Optional[str] = Field(None, alias="serviceId")
+    timeout: Optional[int] = Field(None, alias="timeout")
+
+    class Config:
+        populate_by_name = True
+
+
+class WinEventCheckInfoRequest(BaseModel):
+    """Windowsイベント監視設定リクエスト."""
+    log_name: str = Field(alias="logName")
+    source: Optional[str] = None
+    level: Optional[int] = None
+    keywords: Optional[str] = None
+
+    class Config:
+        populate_by_name = True
+
+
+class WinEventCheckInfoResponse(BaseModel):
+    """Windowsイベント監視設定レスポンス."""
+    log_name: Optional[str] = Field(None, alias="logName")
+    source: Optional[str] = None
+    level: Optional[int] = None
+    keywords: Optional[str] = None
+
+    class Config:
+        populate_by_name = True
+
+
+class CustomCheckInfoRequest(BaseModel):
+    """カスタム監視設定リクエスト."""
+    command: str
+    timeout: int = Field(30000, alias="timeout")
+    spec_flg: bool = Field(False, alias="specFlg")
+    convert_flg: ConvertFlagEnum = Field(ConvertFlagEnum.NONE, alias="convertFlg")
+
+    class Config:
+        populate_by_name = True
+
+
+class CustomCheckInfoResponse(BaseModel):
+    """カスタム監視設定レスポンス."""
+    command: Optional[str] = None
+    timeout: Optional[int] = Field(None, alias="timeout")
+    spec_flg: Optional[bool] = Field(None, alias="specFlg")
+    convert_flg: Optional[ConvertFlagEnum] = Field(None, alias="convertFlg")
+
+    class Config:
+        populate_by_name = True
+
+
 # 具象監視設定クラス
 class AddPingMonitorRequest(AbstractAddNumericMonitorRequest):
     """Ping監視追加リクエスト."""
@@ -639,6 +788,150 @@ class ModifyLogfileMonitorRequest(AbstractModifyStringMonitorRequest):
 class LogfileMonitorResponse(AbstractStringMonitorResponse):
     """ログファイル監視レスポンス."""
     logfile_check_info: Optional[LogfileCheckInfoResponse] = Field(None, alias="logfileCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class AddSqlMonitorRequest(AbstractAddNumericMonitorRequest):
+    """SQL監視追加リクエスト."""
+    sql_check_info: SqlCheckInfoRequest = Field(alias="sqlCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class ModifySqlMonitorRequest(AbstractModifyNumericMonitorRequest):
+    """SQL監視更新リクエスト."""
+    sql_check_info: Optional[SqlCheckInfoRequest] = Field(None, alias="sqlCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class SqlMonitorResponse(AbstractNumericMonitorResponse):
+    """SQL監視レスポンス."""
+    sql_check_info: Optional[SqlCheckInfoResponse] = Field(None, alias="sqlCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class AddJmxMonitorRequest(AbstractAddNumericMonitorRequest):
+    """JMX監視追加リクエスト."""
+    jmx_check_info: JmxCheckInfoRequest = Field(alias="jmxCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class ModifyJmxMonitorRequest(AbstractModifyNumericMonitorRequest):
+    """JMX監視更新リクエスト."""
+    jmx_check_info: Optional[JmxCheckInfoRequest] = Field(None, alias="jmxCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class JmxMonitorResponse(AbstractNumericMonitorResponse):
+    """JMX監視レスポンス."""
+    jmx_check_info: Optional[JmxCheckInfoResponse] = Field(None, alias="jmxCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class AddProcessMonitorRequest(AbstractAddNumericMonitorRequest):
+    """プロセス監視追加リクエスト."""
+    process_check_info: ProcessCheckInfoRequest = Field(alias="processCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class ModifyProcessMonitorRequest(AbstractModifyNumericMonitorRequest):
+    """プロセス監視更新リクエスト."""
+    process_check_info: Optional[ProcessCheckInfoRequest] = Field(None, alias="processCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class ProcessMonitorResponse(AbstractNumericMonitorResponse):
+    """プロセス監視レスポンス."""
+    process_check_info: Optional[ProcessCheckInfoResponse] = Field(None, alias="processCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class AddPortMonitorRequest(AbstractAddNumericMonitorRequest):
+    """ポート監視追加リクエスト."""
+    port_check_info: PortCheckInfoRequest = Field(alias="portCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class ModifyPortMonitorRequest(AbstractModifyNumericMonitorRequest):
+    """ポート監視更新リクエスト."""
+    port_check_info: Optional[PortCheckInfoRequest] = Field(None, alias="portCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class PortMonitorResponse(AbstractNumericMonitorResponse):
+    """ポート監視レスポンス."""
+    port_check_info: Optional[PortCheckInfoResponse] = Field(None, alias="portCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class AddWinEventMonitorRequest(AbstractAddStringMonitorRequest):
+    """Windowsイベント監視追加リクエスト."""
+    winevent_check_info: WinEventCheckInfoRequest = Field(alias="wineventCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class ModifyWinEventMonitorRequest(AbstractModifyStringMonitorRequest):
+    """Windowsイベント監視更新リクエスト."""
+    winevent_check_info: Optional[WinEventCheckInfoRequest] = Field(None, alias="wineventCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class WinEventMonitorResponse(AbstractStringMonitorResponse):
+    """Windowsイベント監視レスポンス."""
+    winevent_check_info: Optional[WinEventCheckInfoResponse] = Field(None, alias="wineventCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class AddCustomMonitorRequest(AbstractAddNumericMonitorRequest):
+    """カスタム監視追加リクエスト."""
+    custom_check_info: CustomCheckInfoRequest = Field(alias="customCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class ModifyCustomMonitorRequest(AbstractModifyNumericMonitorRequest):
+    """カスタム監視更新リクエスト."""
+    custom_check_info: Optional[CustomCheckInfoRequest] = Field(None, alias="customCheckInfo")
+
+    class Config:
+        populate_by_name = True
+
+
+class CustomMonitorResponse(AbstractNumericMonitorResponse):
+    """カスタム監視レスポンス."""
+    custom_check_info: Optional[CustomCheckInfoResponse] = Field(None, alias="customCheckInfo")
 
     class Config:
         populate_by_name = True
