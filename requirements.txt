@@ -3,6 +3,10 @@
 mcp>=1.0.0
 fastmcp>=0.1.0
 
+# HTTP Transport dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
 # HTTP client and requests
 requests>=2.31.0
 urllib3>=2.0.0
