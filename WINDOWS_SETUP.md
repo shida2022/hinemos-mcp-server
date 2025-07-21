@@ -19,7 +19,7 @@ pip install -r requirements.txt
 以下の環境変数を設定するか、`start_fastmcp_server.bat` を編集してください：
 
 ```cmd
-set HINEMOS_BASE_URL=http://3.113.245.85:8080/HinemosWeb/api
+set HINEMOS_BASE_URL=http://hinemos-server:8080/HinemosWeb/api
 set HINEMOS_USERNAME=hinemos
 set HINEMOS_PASSWORD=hinemos
 set HINEMOS_VERIFY_SSL=false
