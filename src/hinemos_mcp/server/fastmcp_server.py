@@ -270,6 +270,28 @@ class HinemosFastMCPServer:
         ) -> str:
             """Create a new monitor configuration.
             
+            Examples:
+                Port monitoring (TCP port 8080):
+                {
+                  "monitor_type": "port",
+                  "monitor_id": "PORT_8080_AP1", 
+                  "facility_id": "AP1",
+                  "description": "AP1ノードのポート8080監視",
+                  "port_no": 8080,
+                  "service_id": "TCP",
+                  "timeout": 5000,
+                  "run_interval": "MIN_05"
+                }
+                
+                HTTP monitoring:
+                {
+                  "monitor_type": "http_numeric",
+                  "monitor_id": "HTTP_HEALTH_CHECK",
+                  "facility_id": "WEB_SERVER",
+                  "url": "http://example.com/health",
+                  "timeout": 10000
+                }
+            
             Args:
                 monitor_type: Type of monitor (ping, http_numeric, http_string, snmp, logfile, sql, jmx, process, port, winevent, custom)
                 monitor_id: Unique monitor ID
@@ -322,9 +344,12 @@ class HinemosFastMCPServer:
                 max_count: Maximum expected process count (default: 10)
                 
                 # Port monitor parameters:
-                port_no: Port number to monitor
-                service_id: Service ID
-                timeout: Connection timeout (default: 5000)
+                port_no: Port number to monitor (required)
+                service_id: Service protocol type (optional)
+                  Valid values: TCP, FTP, SMTP, DNS, NTP, POP3, IMAP, SMTPS, POP3S, IMAPS
+                  Default: TCP if not specified
+                timeout: Connection timeout in milliseconds (default: 5000)
+                  Example: 5000 for 5 seconds timeout
                 
                 # Windows Event monitor parameters:
                 log_name: Windows Event log name

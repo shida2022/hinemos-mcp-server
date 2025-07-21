@@ -50,6 +50,17 @@ start_fastmcp_server.bat をダブルクリックするか、
   * 11種類の監視タイプに対応
   * ping, http_numeric, http_string, snmp, logfile
   * sql, jmx, process, port, winevent, custom
+
+🔧 ポート監視使用例
+------------------
+monitor_type: "port"
+monitor_id: "PORT_8080_AP1"
+facility_id: "AP1"
+port_no: 8080
+service_id: "TCP" (TCP/FTP/SMTP/DNS/NTP/POP3/IMAP/SMTPS/POP3S/IMAPS)
+timeout: 5000 (ミリ秒)
+run_interval: "MIN_05"
+
 - hinemos_create_repository_node (ノード作成)
 - hinemos_create_scope (スコープ作成)
 - その他のリポジトリ・監視管理ツール

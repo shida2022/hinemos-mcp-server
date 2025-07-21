@@ -72,15 +72,48 @@ python hinemos_fastmcp_server.py
 
 ### 使用例
 
+#### PING監視
 ```json
 {
   "monitor_type": "ping",
-  "monitor_id": "ping_monitor_01",
+  "monitor_id": "ping_monitor_01", 
   "facility_id": "target_node_01",
   "description": "サーバ死活監視",
   "run_interval": "MIN_05",
   "run_count": 3,
   "timeout": 5000
+}
+```
+
+#### ポート監視 (推奨設定)
+```json
+{
+  "monitor_type": "port",
+  "monitor_id": "PORT_8080_AP1",
+  "facility_id": "AP1", 
+  "description": "AP1ノードのポート8080監視",
+  "port_no": 8080,
+  "service_id": "TCP",
+  "timeout": 5000,
+  "run_interval": "MIN_05"
+}
+```
+
+**利用可能なservice_id値:**
+- `TCP` (デフォルト)
+- `FTP`, `SMTP`, `DNS`, `NTP`
+- `POP3`, `IMAP`, `SMTPS`, `POP3S`, `IMAPS`
+
+#### HTTP監視
+```json
+{
+  "monitor_type": "http_numeric",
+  "monitor_id": "HTTP_HEALTH_CHECK",
+  "facility_id": "WEB_SERVER",
+  "description": "Webサーバヘルスチェック",
+  "url": "http://example.com/health",
+  "timeout": 10000,
+  "run_interval": "MIN_05"
 }
 ```
 
