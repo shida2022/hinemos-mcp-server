@@ -1731,7 +1731,6 @@ class MonitorAPI:
             owner_role_id=owner_role_id,
             item_name="応答時間",
             measure="msec",
-            prediction_flg=False,
             port_check_info=port_check_info,
             numeric_value_info=numeric_value_info,
             **kwargs
